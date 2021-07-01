@@ -1,17 +1,43 @@
-import React, { createContext, useContext, Suspense, useEffect, useRef, useState } from 'react'
-import { Canvas, useFrame } from '@react-three/fiber'
-import { Physics, usePlane, useBox, useHingeConstraint, useLockConstraint } from '@react-three/cannon'
-import { PerspectiveCamera, OrbitControls } from '@react-three/drei'
+import React, {
+  createContext,
+  useContext,
+  Suspense,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
+import { Canvas, useFrame } from '@react-three/fiber';
+import {
+  Physics,
+  usePlane,
+  useBox,
+  useHingeConstraint,
+  useLockConstraint,
+} from '@react-three/cannon';
+import { PerspectiveCamera, OrbitControls } from '@react-three/drei';
 
+/**
+ * @param root0
+ * @param root0."0"
+ * @param root0."1"
+ * @param root0."2"
+ */
 function normalizeSize([px = 0, py = 0, pz = 0]) {
-  return ([ox = 1, oy = 1, oz = 1]) => [px * ox, py * oy, pz * oz]
+  return ([ox = 1, oy = 1, oz = 1]) => [px * ox, py * oy, pz * oz];
 }
 
-const GROUP_GROUND = 2 ** 0
-const GROUP_BODY = 2 ** 1
+// const GROUP_GROUND = 2 ** 0
 
+/**
+ * @param root0
+ * @param root0.args
+ */
 function Plane({ args, ...props }) {
-  const [ref] = usePlane(() => ({ type: 'Static', collisionFilterGroup: GROUP_GROUND, ...props }))
+  const [ref] = usePlane(() => ({
+    type: 'Static',
+    collisionFilterGroup: GROUP_GROUND,
+    ...props,
+  }));
   return (
     <group ref={ref}>
       <mesh>
@@ -23,10 +49,13 @@ function Plane({ args, ...props }) {
         <shadowMaterial color="lightsalmon" />
       </mesh>
     </group>
-  )
+  );
 }
 
-const context = createContext()
+const GROUP_GROUND = 2 ** 0;
+const GROUP_BODY = 2 ** 1;
+
+const context = createContext();
 
 const ConstraintPart = React.forwardRef(
   (
@@ -43,10 +72,12 @@ const ConstraintPart = React.forwardRef(
     },
     ref,
   ) => {
-    const parent = useContext(context)
+    const parent = useContext(context);
 
-    const normParentPivot = parent ? normalizeSize(parent[1].args) : () => undefined
-    const normPivot = props.args ? normalizeSize(props.args) : () => undefined
+    const normParentPivot = parent
+      ? normalizeSize(parent[1].args)
+      : () => undefined;
+    const normPivot = props.args ? normalizeSize(props.args) : () => undefined;
 
     const [bodyRef] = useBox(
       () => ({
@@ -57,168 +88,199 @@ const ConstraintPart = React.forwardRef(
         ...props,
       }),
       ref,
-    )
+    );
 
-    const [, , hingeApi] = useHingeConstraint(bodyRef, parent ? parent[0] : null, {
-      collideConnected: false,
-      axisA: [0, 0, 1],
-      axisB: [0, 0, 1],
-      pivotA: normPivot(pivot),
-      pivotB: normParentPivot(parentPivot),
-      ...config,
-    })
+    const [, , hingeApi] = useHingeConstraint(
+      bodyRef,
+      parent ? parent[0] : null,
+      {
+        collideConnected: false,
+        axisA: [0, 0, 1],
+        axisB: [0, 0, 1],
+        pivotA: normPivot(pivot),
+        pivotB: normParentPivot(parentPivot),
+        ...config,
+      },
+    );
 
     useEffect(() => {
       if (enableMotor) {
-        hingeApi.enableMotor()
+        hingeApi.enableMotor();
       } else {
-        hingeApi.disableMotor()
+        hingeApi.disableMotor();
       }
-    }, [enableMotor])
+    }, [enableMotor]);
 
     useEffect(() => {
-      hingeApi.setMotorSpeed(motorSpeed)
-    }, [motorSpeed])
+      hingeApi.setMotorSpeed(motorSpeed);
+    }, [motorSpeed]);
 
     return (
       <context.Provider value={[bodyRef, props]}>
         <BoxShape ref={bodyRef} {...props} color={color} />
         {children}
       </context.Provider>
-    )
+    );
   },
-)
+);
 
 const BoxShape = React.forwardRef(
-  ({ children, transparent = false, opacity = 1, color = 'white', args = [1, 1, 1], ...props }, ref) => {
+  (
+    {
+      children,
+      transparent = false,
+      opacity = 1,
+      color = 'white',
+      args = [1, 1, 1],
+      ...props
+    },
+    ref,
+  ) => {
     return (
       <mesh receiveShadow castShadow ref={ref} {...props}>
         <boxBufferGeometry args={args} />
-        <meshStandardMaterial color={color} transparent={transparent} opacity={opacity} />
+        <meshStandardMaterial
+          color={color}
+          transparent={transparent}
+          opacity={opacity}
+        />
 
         {children}
       </mesh>
-    )
+    );
   },
-)
+);
 
 const Robot = React.forwardRef(({ ...props }, ref) => {
-  const [isWalking, setIsWalking] = useState(false)
-  const legsLeftRef = ref
-  const legsRightRef = useRef()
-  useLockConstraint(legsRightRef, legsLeftRef)
+  const [isWalking, setIsWalking] = useState(false);
+  const legsLeftRef = ref;
+  const legsRightRef = useRef();
+  useLockConstraint(legsRightRef, legsLeftRef);
   return (
     <group {...props} onClick={() => setIsWalking(!isWalking)}>
       <Legs ref={legsLeftRef} bodyDepth={2} isWalking={isWalking} />
       <Legs ref={legsRightRef} isWalking={isWalking} />
     </group>
-  )
-})
+  );
+});
 
-const Legs = React.forwardRef(({ bodyDepth = 0, isWalking = false, ...props }, bodyRef) => {
-  const horizontalRef = useRef()
-  const frontLegRef = useRef()
-  const frontUpperLegRef = useRef()
-  const backLegRef = useRef()
-  const partDepth = 0.3 // Leg thickness
-  const bodyWidth = 10 // Robot body length
-  const bodyHeight = 2
-  const legLength = 6
-  const motorSpeed = 20
-  const size3 = normalizeSize([1, 3, partDepth])
-  const size5 = normalizeSize([1, 5, partDepth])
-  const size10 = normalizeSize([1, 10, partDepth])
+const Legs = React.forwardRef(
+  ({ bodyDepth = 0, isWalking = false, ...props }, bodyRef) => {
+    const horizontalRef = useRef();
+    const frontLegRef = useRef();
+    const frontUpperLegRef = useRef();
+    const backLegRef = useRef();
+    const partDepth = 0.3; // Leg thickness
+    const bodyWidth = 10; // Robot body length
+    const bodyHeight = 2;
+    const legLength = 6;
+    const motorSpeed = 20;
+    const size3 = normalizeSize([1, 3, partDepth]);
+    const size5 = normalizeSize([1, 5, partDepth]);
+    const size10 = normalizeSize([1, 10, partDepth]);
 
-  // Hinge constraints for triangulations
-  useHingeConstraint(frontUpperLegRef, frontLegRef, {
-    collideConnected: false,
-    axisA: [0, 0, 1],
-    axisB: [0, 0, 1],
-    pivotA: size3([0, 0.5, 0.5]),
-    pivotB: size5([0, 0.5, -0.5]),
-  })
+    // Hinge constraints for triangulations
+    useHingeConstraint(frontUpperLegRef, frontLegRef, {
+      collideConnected: false,
+      axisA: [0, 0, 1],
+      axisB: [0, 0, 1],
+      pivotA: size3([0, 0.5, 0.5]),
+      pivotB: size5([0, 0.5, -0.5]),
+    });
 
-  useHingeConstraint(backLegRef, horizontalRef, {
-    collideConnected: false,
-    axisA: [0, 0, 1],
-    axisB: [0, 0, 1],
-    pivotA: size5([0, 0.5, 0.5]),
-    pivotB: size10([0, 0.5, -0.5]),
-  })
+    useHingeConstraint(backLegRef, horizontalRef, {
+      collideConnected: false,
+      axisA: [0, 0, 1],
+      axisB: [0, 0, 1],
+      pivotA: size5([0, 0.5, 0.5]),
+      pivotB: size10([0, 0.5, -0.5]),
+    });
 
-  return (
-    <group {...props}>
-      {/* Body */}
-      <ConstraintPart
-        ref={bodyRef}
-        mass={1}
-        args={[bodyHeight, bodyWidth, bodyDepth ? bodyDepth + partDepth * 3 : 0]}
-        rotation={[0, 0, Math.PI / 2]}
-        position={[0, 0, bodyDepth]}
-        transparent={!bodyDepth}
-        opacity={Number(!!bodyDepth)}>
-        {/* Upper front leg */}
+    return (
+      <group {...props}>
+        {/* Body */}
         <ConstraintPart
-          ref={frontUpperLegRef}
-          args={[1, 3, partDepth]}
-          position={[-2, 0.5, bodyDepth]}
-          rotation={[0, 0, Math.PI / 3]}
-          pivot={[0, -0.5, -0.5]}
-          parentPivot={[0, 0.2, 0.5]}
-          color="#85ffb3"
-        />
-        {/* Crank */}
-        <ConstraintPart
-          enableMotor={isWalking} // Motor enabled here
-          motorSpeed={motorSpeed}
-          args={[0.5, 1, partDepth]}
-          position={[bodyWidth * -0.5, -1.5 / 2, bodyDepth]}
-          parentPivot={[0, 0.5, 0.5]}
-          pivot={[0, 0.5, -0.5]}
-          color="black">
-          {/* Front leg */}
+          ref={bodyRef}
+          mass={1}
+          args={[
+            bodyHeight,
+            bodyWidth,
+            bodyDepth ? bodyDepth + partDepth * 3 : 0,
+          ]}
+          rotation={[0, 0, Math.PI / 2]}
+          position={[0, 0, bodyDepth]}
+          transparent={!bodyDepth}
+          opacity={Number(!!bodyDepth)}
+        >
+          {/* Upper front leg */}
           <ConstraintPart
-            ref={frontLegRef}
-            args={[1, legLength, partDepth]}
-            position={[bodyWidth * -0.5, -1, bodyDepth]}
-            rotation={[0, 0, Math.PI / -6]}
-            parentPivot={[0, -0.5, 0.5]}
-            pivot={[0, 0, -0.5]}
-            color="#85b3ff">
-            {/* Horizontal bar */}
+            ref={frontUpperLegRef}
+            args={[1, 3, partDepth]}
+            position={[-2, 0.5, bodyDepth]}
+            rotation={[0, 0, Math.PI / 3]}
+            pivot={[0, -0.5, -0.5]}
+            parentPivot={[0, 0.2, 0.5]}
+            color="#85ffb3"
+          />
+          {/* Crank */}
+          <ConstraintPart
+            enableMotor={isWalking} // Motor enabled here
+            motorSpeed={motorSpeed}
+            args={[0.5, 1, partDepth]}
+            position={[bodyWidth * -0.5, -1.5 / 2, bodyDepth]}
+            parentPivot={[0, 0.5, 0.5]}
+            pivot={[0, 0.5, -0.5]}
+            color="black"
+          >
+            {/* Front leg */}
             <ConstraintPart
-              ref={horizontalRef}
-              parentPivot={[0, 0, 0.5]}
-              pivot={[0, -0.5, -0.5]}
-              args={[1, bodyWidth, partDepth]}
-              position={[0, 0, bodyDepth]}
-              color="#ff85b3"
-              rotation={[0, 0, Math.PI / -2.5]}
-            />
+              ref={frontLegRef}
+              args={[1, legLength, partDepth]}
+              position={[bodyWidth * -0.5, -1, bodyDepth]}
+              rotation={[0, 0, Math.PI / -6]}
+              parentPivot={[0, -0.5, 0.5]}
+              pivot={[0, 0, -0.5]}
+              color="#85b3ff"
+            >
+              {/* Horizontal bar */}
+              <ConstraintPart
+                ref={horizontalRef}
+                parentPivot={[0, 0, 0.5]}
+                pivot={[0, -0.5, -0.5]}
+                args={[1, bodyWidth, partDepth]}
+                position={[0, 0, bodyDepth]}
+                color="#ff85b3"
+                rotation={[0, 0, Math.PI / -2.5]}
+              />
+            </ConstraintPart>
           </ConstraintPart>
+
+          {/* Back leg */}
+          <ConstraintPart
+            ref={backLegRef}
+            args={[1, legLength, partDepth]}
+            pivot={[0, -0, -1]}
+            parentPivot={[-0.0, -0.5, 0.5]}
+            position={[bodyWidth * 0.5, 0, bodyDepth]}
+            rotation={[0, 0, Math.PI / 4]}
+            color="#85b3ff"
+          ></ConstraintPart>
         </ConstraintPart>
+      </group>
+    );
+  },
+);
 
-        {/* Back leg */}
-        <ConstraintPart
-          ref={backLegRef}
-          args={[1, legLength, partDepth]}
-          pivot={[0, -0, -1]}
-          parentPivot={[-0.0, -0.5, 0.5]}
-          position={[bodyWidth * 0.5, 0, bodyDepth]}
-          rotation={[0, 0, Math.PI / 4]}
-          color="#85b3ff"></ConstraintPart>
-      </ConstraintPart>
-    </group>
-  )
-})
-
+/**
+ *
+ */
 function Scene() {
-  const cameraRef = useRef()
-  const robotRef = useRef()
+  const cameraRef = useRef();
+  const robotRef = useRef();
 
   useFrame(() => {
-    cameraRef.current.lookAt(robotRef.current.position)
-  })
+    cameraRef.current.lookAt(robotRef.current.position);
+  });
 
   return (
     <Suspense fallback={null}>
@@ -240,11 +302,18 @@ function Scene() {
       <Physics iterations={80} gravity={[0, -40, 0]}>
         <Robot ref={robotRef} />
 
-        <Plane args={[120, 120]} position={[-20, -5, 0]} rotation={[-Math.PI / 2, 0, 0]} />
+        <Plane
+          args={[120, 120]}
+          position={[-20, -5, 0]}
+          rotation={[-Math.PI / 2, 0, 0]}
+        />
       </Physics>
     </Suspense>
-  )
+  );
 }
+/**
+ *
+ */
 export default function App() {
   return (
     <>
@@ -260,9 +329,10 @@ export default function App() {
           left: 50,
           color: 'white',
           fontSize: '1.2em',
-        }}>
+        }}
+      >
         <pre>* click to reduce speed</pre>
       </div>
     </>
-  )
+  );
 }
