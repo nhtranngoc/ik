@@ -54,7 +54,7 @@ const rules = {
   ],
   'no-unused-expressions': 0,
   'no-undef': ['error'],
-  'react/prop-types': ['error'],
+  // 'react/prop-types': ['error'],
   'no-eval': ['error'],
 };
 
