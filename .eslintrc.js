@@ -6,7 +6,7 @@ const extend = [
   'react-app',
   'eslint:recommended',
   'plugin:jsx-a11y/recommended',
-  'plugin:jsdoc/recommended',
+  // 'plugin:jsdoc/recommended',
 ];
 
 const parserOptions = {
@@ -19,7 +19,7 @@ const parserOptions = {
 
 const ignorePatterns = ['src/lib/'];
 
-const plugins = ['prettier', 'react', 'jsdoc'];
+const plugins = ['prettier', 'react'];
 
 const rules = {
   'comma-dangle': ['error', 'always-multiline'],
