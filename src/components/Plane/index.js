@@ -1,1 +1,1 @@
-export { default } from './Plane.js'
+export { default } from './Plane.js';
