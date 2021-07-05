@@ -4,15 +4,58 @@ import { Physics } from '@react-three/cannon';
 import { PerspectiveCamera } from '@react-three/drei';
 
 import Plane from 'components/Plane';
-import BoxShape from 'components/BoxShape';
+import ConstraintPart from 'components/ConstraintPart';
+
+const Legs = React.forwardRef(
+  ({ bodyDepth = 0, isWalking = false, ...props }, bodyRef) => {
+    const coxaRef = useRef();
+    // const femurRef = useRef();
+    // const tibiaRef = useRef();
+    const partDepth = 0.3; // Leg thickness
+    const bodyWidth = 1; // Robot body length
+    const bodyHeight = 10;
+    // const legLength = 6;
+
+    return (
+      <group {...props}>
+        {/* Body */}
+        <ConstraintPart
+          ref={bodyRef}
+          mass={1}
+          args={[
+            bodyHeight,
+            bodyWidth,
+            bodyDepth ? bodyDepth + partDepth * 3 : 0,
+          ]}
+          position={[0, 0, bodyDepth]}
+          transparent={!bodyDepth}
+          opacity={Number(!!bodyDepth)}
+        >
+          {/* Coxa */}
+          <ConstraintPart
+            ref={coxaRef}
+            args={[1, 1, 1]}
+            position={[bodyWidth / 2, -1.5 / 2, bodyDepth]}
+            parentPivot={[0, 0, 0.5]}
+            rotation={[0, 0, Math.PI / 2]}
+            pivot={[0, 0.5, -0.5]}
+            color="#85b3ff"
+          >
+            {/* Femur */}
+          </ConstraintPart>
+        </ConstraintPart>
+      </group>
+    );
+  },
+);
 
 function Scene() {
   const cameraRef = useRef();
-  const boxRef = useRef();
+  const legRef = useRef();
   //   const robotRef = useRef();
 
   useFrame(() => {
-    cameraRef.current.lookAt(boxRef.current.position);
+    cameraRef.current.lookAt(legRef.current.position);
     // cameraRef.current.lookAt(robotRef.current.position);
   });
 
@@ -35,7 +78,7 @@ function Scene() {
 
       <Physics iterations={80} gravity={[0, -40, 0]}>
         {/* <Robot ref={robotRef} /> */}
-        <BoxShape ref={boxRef} />
+        <Legs ref={legRef} bodyDepth={10} />
 
         <Plane
           args={[120, 120]}
