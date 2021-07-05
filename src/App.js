@@ -11,18 +11,6 @@ export default function App() {
         <OrbitControls />
         <Scene />
       </Canvas>
-
-      <div
-        style={{
-          position: 'absolute',
-          top: 20,
-          left: 50,
-          color: 'white',
-          fontSize: '1.2em',
-        }}
-      >
-        <pre>* click to reduce speed</pre>
-      </div>
     </>
   );
 }
