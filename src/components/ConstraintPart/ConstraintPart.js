@@ -12,12 +12,13 @@ const ConstraintPart = React.forwardRef(
     {
       config = {},
       enableMotor,
-      motorSpeed,
+      motorSpeed = 7,
       color,
       children,
       name,
       pivot = [0, 0, 0],
       parentPivot = [0, 0, 0],
+      enableControls,
       ...props
     },
     ref,
@@ -29,7 +30,7 @@ const ConstraintPart = React.forwardRef(
       : () => undefined;
     const normPivot = props.args ? normalizeSize(props.args) : () => undefined;
 
-    const [bodyRef] = useBox(
+    const [bodyRef, api] = useBox(
       () => ({
         collisionFilterGroup: GROUP_BODY,
         collisionFilterMask: GROUP_GROUND,

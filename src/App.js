@@ -11,6 +11,7 @@ export default function App() {
         <OrbitControls />
         <Scene />
       </Canvas>
+      <div className="tweak-container" />
     </>
   );
 }

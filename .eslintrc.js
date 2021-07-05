@@ -56,6 +56,7 @@ const rules = {
   'no-undef': ['error'],
   // 'react/prop-types': ['error'],
   'no-eval': ['error'],
+  'no-unused-vars': ['warn'],
 };
 
 const settings = {

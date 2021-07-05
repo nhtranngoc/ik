@@ -1,7 +1,8 @@
 import React, { Suspense, useRef } from 'react';
 import { useFrame } from '@react-three/fiber';
-import { Physics } from '@react-three/cannon';
+import { Debug, Physics } from '@react-three/cannon';
 import { PerspectiveCamera } from '@react-three/drei';
+import { useControls } from 'leva';
 
 import Plane from 'components/Plane';
 import ConstraintPart from 'components/ConstraintPart';
@@ -15,6 +16,10 @@ const Legs = React.forwardRef(
     const bodyWidth = 1; // Robot body length
     const bodyHeight = 10;
     // const legLength = 6;
+
+    const { enableMotor } = useControls({
+      enableMotor: false,
+    });
 
     return (
       <group {...props}>
@@ -30,16 +35,18 @@ const Legs = React.forwardRef(
           position={[0, 0, bodyDepth]}
           transparent={!bodyDepth}
           opacity={Number(!!bodyDepth)}
+          enableControls
         >
           {/* Coxa */}
           <ConstraintPart
             ref={coxaRef}
             args={[1, 1, 1]}
             position={[bodyWidth / 2, -1.5 / 2, bodyDepth]}
-            parentPivot={[0, 0, 0.5]}
+            parentPivot={[0, 0.5, 0.5]}
             rotation={[0, 0, Math.PI / 2]}
             pivot={[0, 0.5, -0.5]}
             color="#85b3ff"
+            enableMotor={enableMotor}
           >
             {/* Femur */}
           </ConstraintPart>
@@ -77,14 +84,16 @@ function Scene() {
       <color attach="background" args={['#f6d186']} />
 
       <Physics iterations={80} gravity={[0, -40, 0]}>
-        {/* <Robot ref={robotRef} /> */}
-        <Legs ref={legRef} bodyDepth={10} />
+        <Debug color="black" scale={1.1}>
+          {/* <Robot ref={robotRef} /> */}
+          <Legs ref={legRef} bodyDepth={10} />
 
-        <Plane
-          args={[120, 120]}
-          position={[-20, -5, 0]}
-          rotation={[-Math.PI / 2, 0, 0]}
-        />
+          <Plane
+            args={[120, 120]}
+            position={[-20, -5, 0]}
+            rotation={[-Math.PI / 2, 0, 0]}
+          />
+        </Debug>
       </Physics>
     </Suspense>
   );
