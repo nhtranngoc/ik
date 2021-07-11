@@ -9,7 +9,8 @@ import ConstraintPart from 'components/ConstraintPart';
 
 const Legs = React.forwardRef(
   ({ bodyDepth = 0, isWalking = false, ...props }, bodyRef) => {
-    const coxaRef = useRef();
+    const servoRef = useRef();
+    const servoArmRef = useRef();
     // const femurRef = useRef();
     // const tibiaRef = useRef();
     const partDepth = 0.3; // Leg thickness
@@ -37,18 +38,26 @@ const Legs = React.forwardRef(
           opacity={Number(!!bodyDepth)}
           enableControls
         >
-          {/* Coxa */}
+          {/* Servo */}
           <ConstraintPart
-            ref={coxaRef}
-            args={[1, 1, 1]}
+            ref={servoRef}
+            args={[2, 4.1, 4.3]}
             position={[bodyWidth / 2, -1.5 / 2, bodyDepth]}
             parentPivot={[0, 0.5, 0.5]}
             rotation={[0, 0, Math.PI / 2]}
             pivot={[0, 0.5, -0.5]}
             color="#85b3ff"
-            enableMotor={enableMotor}
           >
-            {/* Femur */}
+            {/* Servo Arm */}
+            <ConstraintPart
+              ref={servoArmRef}
+              args={[2, 2, 2]}
+              position={[3, 3, 3]}
+              parentPivot={[0, 0, 0]}
+              pivot={[0, 0, 0]}
+              color="red"
+              enableMotor={enableMotor}
+            ></ConstraintPart>
           </ConstraintPart>
         </ConstraintPart>
       </group>
